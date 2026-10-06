@@ -1,0 +1,76 @@
+graph star {
+  layout=neato; overlap=false; splines=true; pad=0.1;
+  node [shape=plaintext, fontname="Helvetica", fontsize=9];
+  edge [color="#7a8797", penwidth=1.1, fontname="Helvetica", fontsize=8];
+
+  fact [pos="4.2,3.1!", label=<
+  <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#c9962c" BGCOLOR="#fff8e1">
+   <TR><TD BGCOLOR="#c9962c"><FONT COLOR="white"><B>fact_match</B></FONT></TD></TR>
+   <TR><TD><I>grain: 1 row per league match</I></TD></TR>
+   <TR><TD ALIGN="LEFT"><B>PK</B> match_key</TD></TR>
+   <TR><TD ALIGN="LEFT">FK date_key, season_key, competition_key</TD></TR>
+   <TR><TD ALIGN="LEFT">FK home_team_key, away_team_key</TD></TR>
+   <TR><TD ALIGN="LEFT">FK referee_key, value_snapshot_date_key</TD></TR>
+   <TR><TD ALIGN="LEFT">full_time_result (degenerate)</TD></TR>
+   <TR><TD ALIGN="LEFT">goals, ht goals, points, shots, SoT,</TD></TR>
+   <TR><TD ALIGN="LEFT">corners, fouls, cards, xG</TD></TR>
+   <TR><TD ALIGN="LEFT">odds H/D/A (open + close)</TD></TR>
+   <TR><TD ALIGN="LEFT">home/away_squad_value_eur</TD></TR>
+  </TABLE>>];
+
+  snap [pos="8.4,3.1!", label=<
+  <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#c9962c" BGCOLOR="#fff8e1">
+   <TR><TD BGCOLOR="#c9962c"><FONT COLOR="white"><B>fact_team_value_snapshot</B></FONT></TD></TR>
+   <TR><TD><I>grain: 1 row per team per month-end</I></TD></TR>
+   <TR><TD ALIGN="LEFT"><B>PK</B> snapshot_date_key, team_key</TD></TR>
+   <TR><TD ALIGN="LEFT">FK competition_key</TD></TR>
+   <TR><TD ALIGN="LEFT">squad_market_value_eur, valued_players</TD></TR>
+   <TR><TD ALIGN="LEFT">avg/max_player_value_eur</TD></TR>
+   <TR><TD ALIGN="LEFT">days_since_last_valuation</TD></TR>
+  </TABLE>>];
+
+  date [pos="0.6,5.3!", label=<
+  <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#4a6fa5" BGCOLOR="#eef3fb">
+   <TR><TD BGCOLOR="#4a6fa5"><FONT COLOR="white"><B>dim_date</B>  [static]</FONT></TD></TR>
+   <TR><TD ALIGN="LEFT"><B>PK</B> date_key (yyyymmdd)</TD></TR>
+   <TR><TD ALIGN="LEFT">full_date, year, quarter, month,</TD></TR>
+   <TR><TD ALIGN="LEFT">iso_week, day_name, is_weekend</TD></TR>
+  </TABLE>>];
+
+  season [pos="0.6,3.1!", label=<
+  <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#4a6fa5" BGCOLOR="#eef3fb">
+   <TR><TD BGCOLOR="#4a6fa5"><FONT COLOR="white"><B>dim_season</B>  [static]</FONT></TD></TR>
+   <TR><TD ALIGN="LEFT"><B>PK</B> season_key</TD></TR>
+   <TR><TD ALIGN="LEFT">season_code, season_label,</TD></TR>
+   <TR><TD ALIGN="LEFT">start/end_date, is_complete</TD></TR>
+  </TABLE>>];
+
+  comp [pos="0.6,0.9!", label=<
+  <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#4a6fa5" BGCOLOR="#eef3fb">
+   <TR><TD BGCOLOR="#4a6fa5"><FONT COLOR="white"><B>dim_competition</B>  [SCD1]</FONT></TD></TR>
+   <TR><TD ALIGN="LEFT"><B>PK</B> competition_key</TD></TR>
+   <TR><TD ALIGN="LEFT">fd_division_code, tm_competition_id,</TD></TR>
+   <TR><TD ALIGN="LEFT">name, country, tier, teams_per_season</TD></TR>
+  </TABLE>>];
+
+  team [pos="5.2,0.3!", label=<
+  <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#3d8b5a" BGCOLOR="#eef7f1">
+   <TR><TD BGCOLOR="#3d8b5a"><FONT COLOR="white"><B>dim_team</B>  [SCD2]  (role-playing: home / away)</FONT></TD></TR>
+   <TR><TD ALIGN="LEFT"><B>PK</B> team_key  |  NK tm_club_id</TD></TR>
+   <TR><TD ALIGN="LEFT">team_name, fd_team_name, country</TD></TR>
+   <TR><TD ALIGN="LEFT">coach_name, current_competition_key  (tracked, Type 2)</TD></TR>
+   <TR><TD ALIGN="LEFT">stadium_name, stadium_seats  (Type 1)</TD></TR>
+   <TR><TD ALIGN="LEFT">valid_from, valid_to, is_current</TD></TR>
+  </TABLE>>];
+
+  ref [pos="5.2,5.6!", label=<
+  <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" COLOR="#4a6fa5" BGCOLOR="#eef3fb">
+   <TR><TD BGCOLOR="#4a6fa5"><FONT COLOR="white"><B>dim_referee</B>  [SCD1]</FONT></TD></TR>
+   <TR><TD ALIGN="LEFT"><B>PK</B> referee_key  (-1 = not published)</TD></TR>
+   <TR><TD ALIGN="LEFT">referee_name</TD></TR>
+  </TABLE>>];
+
+  fact -- date; fact -- season; fact -- comp; fact -- ref;
+  fact -- team [label="home"]; fact -- team [label="away"];
+  snap -- team; snap -- date; snap -- comp;
+}

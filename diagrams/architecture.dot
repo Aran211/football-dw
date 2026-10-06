@@ -1,0 +1,37 @@
+digraph arch {
+  rankdir=LR; fontname="Helvetica"; nodesep=0.22; ranksep=0.45; pad=0.1; newrank=true;
+  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, color="#5b6b7b", fillcolor="#ffffff", penwidth=1.1, margin="0.08,0.05"];
+  edge [fontname="Helvetica", fontsize=9.5, color="#5b6b7b", arrowsize=0.7];
+
+  subgraph cluster_src { label="SOURCES"; fontsize=11; fontcolor="#33415c"; style="rounded,filled"; fillcolor="#eef3fb"; color="#c9d6ea";
+    fd [label="football-data.co.uk\nmatches, stats, odds\n(CSV over HTTP)"];
+    tm [label="Transfermarkt dataset\nclubs, players, values,\ngames (Kaggle/GitHub)"];
+  }
+  subgraph cluster_ing { label="INGESTION · Airflow + Python"; fontsize=11; fontcolor="#33415c"; style="rounded,filled"; fillcolor="#f3effa"; color="#d9cdee";
+    dag1 [label="DAG fd_matches\nfile pull, Mon+Thu\n(batch, weekly)"];
+    dag2 [label="DAG tm_values\nfile pull, monthly\n(batch)"];
+  }
+  subgraph cluster_sto { label="STORAGE · Docker"; fontsize=11; fontcolor="#33415c"; style="rounded,filled"; fillcolor="#eef7f1"; color="#c8e3d1";
+    raw  [label="PostgreSQL raw.*\nappend-only\n+ load_id"];
+    land [label="Landing zone\nimmutable CSV\nper load date"];
+  }
+  subgraph cluster_wh { label="WAREHOUSE · dbt on PostgreSQL"; fontsize=11; fontcolor="#33415c"; style="rounded,filled"; fillcolor="#fdf4e7"; color="#efd9b4";
+    dw  [label="dw.* star schema\nfacts + dims\ndim_team SCD2\n(dbt snapshot)"];
+    dq  [label="DQ gate (dbt test)\nunique + not_null key\nteam mapping 100%\nresult = score\nTM freshness ≤45 d", style="rounded,filled,dashed", fillcolor="#fff8e1", color="#c9962c"];
+    stg [label="staging.*\ncast, de-dup,\nteam_name_map"];
+  }
+  subgraph cluster_rep { label="REPORTING"; fontsize=11; fontcolor="#33415c"; style="rounded,filled"; fillcolor="#fbeef0"; color="#ecc9cf";
+    bi [label="Superset /\nStreamlit\ndashboards"];
+  }
+  alert [label="fail → stop DAG\n+ e-mail alert", shape=note, style="filled", fillcolor="#fbe9e9", color="#b23b3b", fontsize=10];
+
+  fd -> dag1; tm -> dag2;
+  dag1 -> land; dag2 -> land;
+  land -> raw [label="COPY"];
+  raw -> stg [label="dbt run"];
+  stg -> dq; dq -> dw [label="pass"];
+  dq -> alert [style=dashed, color="#b23b3b", label="fail", fontcolor="#b23b3b"];
+  dw -> bi [label="SQL"];
+  {rank=same; raw; land}
+  {rank=same; dw; dq; stg}
+}
